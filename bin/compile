@@ -17,6 +17,10 @@ for BUILDPACK in $(cat $1/.buildpacks); do
   rm -rf $dir
 
   subfolder=${BUILDPACK#*@}
+  if [ "$subfolder" == "$BUILDPACK" ]; then
+    subfolder=""
+  fi
+
   BUILDPACK=${BUILDPACK%@*}
   url=${BUILDPACK%#*}
   branch=${BUILDPACK#*#}
