@@ -16,8 +16,18 @@ for BUILDPACK in $(cat $1/.buildpacks); do
   dir=$(mktemp -t buildpackXXXXX)
   rm -rf $dir
 
+  subfolder=${BUILDPACK#*@}
+  BUILDPACK=${BUILDPACK%@*}
   url=${BUILDPACK%#*}
   branch=${BUILDPACK#*#}
+
+  if [ "$subfolder" != "" ]; then
+    BUILD_DIR="$1/$subfolder"
+    echo "Using folder: $subfolder"
+  else
+    BUILD_DIR=$1
+    echo "Using root folder"
+  fi
 
   if [ "$branch" == "$url" ]; then
     branch=""
@@ -41,23 +51,23 @@ for BUILDPACK in $(cat $1/.buildpacks); do
     # we'll get errors later if these are needed and don't exist
     chmod -f +x $dir/bin/{detect,compile,release} || true
 
-    framework=$($dir/bin/detect $1)
+    framework=$($dir/bin/detect $BUILD_DIR)
 
     if [ $? == 0 ]; then
       echo "=====> Detected Framework: $framework"
-      $dir/bin/compile $1 $2 $3
+      $dir/bin/compile $BUILD_DIR $2 $3
 
       if [ $? != 0 ]; then
         exit 1
       fi
 
       if [ -x $dir/bin/release ]; then
-        $dir/bin/release $1 > $1/last_pack_release.out
+        $dir/bin/release $BUILD_DIR > $BUILD_DIR/last_pack_release.out
       fi
     fi
   fi
 done
 
-if [ -e $1/last_pack_release.out ]; then
+if [ -e $BUILD_DIR/last_pack_release.out ]; then
   echo "Using release configuration from last framework ($framework)."
 fi
